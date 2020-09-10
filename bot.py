@@ -1,0 +1,2 @@
+# proverka
+print('Hello world!')
