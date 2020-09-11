@@ -1,2 +1,0 @@
-# proverka
-print('Hello world!')
