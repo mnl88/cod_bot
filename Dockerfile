@@ -10,6 +10,10 @@ WORKDIR /usr/src/app
 # копирует в контейнер файлы и папки (в данном случае точка означает, что из нашей активной директории)
 COPY . /usr/src/app
 
+EXPOSE 8080
+
+ENV TZ Europe/Moscow
+
 RUN pip install --no-cache-dir -r requirements.txt
 
 # описывает команду с аргументами, которую нужно выполнить когда контейнер будет запущен.
