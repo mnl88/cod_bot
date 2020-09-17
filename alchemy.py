@@ -22,19 +22,19 @@ class COD_User(DeclarativeBase):
 
     id = Column(Integer, primary_key=True)
     tg_id = Column('tg_id', Integer, unique=True, nullable=False)
-    tg_name = Column('tg_name', String)
-    name = Column('name', String)
-    psn_id = Column('psn_id', String(50))
-    activision_id = Column('activision_id', String(50))
-    kd_warzone = Column('kd_warzone', String(50))
-    kd_multiplayer = Column('kd_multiplayer', String(50))
-    update_kd = Column('update_kd', TIMESTAMP)
+    tg_name = Column('tg_name', String, default='unknown')
+    name = Column('name', String, default='unknown')
+    psn_id = Column('psn_id', String, default='unknown')
+    activision_id = Column('activision_id', String, default='unknown')
+    kd_warzone = Column('kd_warzone', String(50), default='unknown')
+    kd_multiplayer = Column('kd_multiplayer', String(50), default='unknown')
+    update_kd = Column('update_kd', TIMESTAMP, default=datetime.now())
     update_timestamp = Column('update_timestamp', TIMESTAMP, default=datetime.now())
     ready_to_play_timestamp = Column('ready_to_play_timestamp', TIMESTAMP)
-    ready_to_play_comment = Column('ready_to_play_comment', String(250))
+    ready_to_play_comment = Column('ready_to_play_comment', String(250), default='')
 
     def __repr__(self):
-        return "<COD-USER: ('%s','%s','%s')>" % (self.tg_id, self.tg_name, self.name)
+        return "<COD-USER: ('%s','%s','%s','%s')>" % (self.tg_id, self.tg_name, self.activision_id, self.name)
 
 
 def db_init():
@@ -55,9 +55,11 @@ def is_row_exists(session, tg_id):
 
 def get_member(session, tg_id):
     """По указанному ID получаем объект"""
-    if is_row_exists(tg_id):
+    if is_row_exists(session, tg_id):
         member = session.query(COD_User).filter_by(tg_id=tg_id).first()
         return member
+    else:
+        return False
 
 
 def get_all_members(session, **config_filter):
@@ -66,9 +68,10 @@ def get_all_members(session, **config_filter):
     return members
 
 
-def add_member(session, cod_user):
+def add_member(session, tg_id, tg_name='empty'):
     """Добавляем участника"""
-    if not is_row_exists(cod_user.tg_id):
+    cod_user = COD_User(tg_id=tg_id, tg_name=tg_name)
+    if not is_row_exists(session, cod_user.tg_id):
         try:
             session.add(cod_user)
             session.commit()
@@ -80,7 +83,7 @@ def add_member(session, cod_user):
 
 def update_member(session, cod_user):
     """Обновляем данные об участнике"""
-    if is_row_exists(cod_user.tg_id):
+    if is_row_exists(session, cod_user.tg_id):
         try:
             session.add(cod_user)
             session.commit()

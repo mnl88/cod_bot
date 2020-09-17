@@ -24,6 +24,7 @@ def get_html(host, url_start, url_finish, activision_id: str):
     """распарчим страничку"""
     url_middle = activision_id.replace('#', '%23')
     url = host + url_start + url_middle + url_finish
+    print(url)
     response = requests.get(url=url, headers=HEADERS)
     return response
 
@@ -51,6 +52,7 @@ def get_content(html, game_type='WZ'):
 
 def parser_act_id(activision_id, game_type='WZ'):
     """парсер КД по id activision"""
+
     if game_type == 'WZ':
         html = get_html(HOST, URL_WZ_START, URL_WZ_FINISH, activision_id)
     else:
@@ -59,14 +61,17 @@ def parser_act_id(activision_id, game_type='WZ'):
         kd_ratio = get_content(html, game_type)
         return kd_ratio
     else:
-        print('Error')
+        print(f'{html}, {html.status_code}')
 
 
 def main():
-    activision_id = 'Dikiy_Kaban#236583348'
+    activision_id = 'Imago#1393409'
+
     kd_wz = parser_act_id(activision_id, 'WZ')
+    print(kd_wz)
+
     kd_mp = parser_act_id(activision_id, 'MP')
-    print(kd_wz, kd_mp)
+    print(kd_mp)
 
 
 if __name__ == '__main__':
