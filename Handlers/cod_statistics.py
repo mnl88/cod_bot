@@ -68,7 +68,6 @@ async def update_my_profile_step_2(message: types.Message, state: FSMContext):  
     user_data = await state.get_data()
     print(user_data)
     await message.reply("напишите " + user_data['user_choose'], reply_markup=types.ReplyKeyboardRemove())
-    '''тут должна быть проверка на валидность'''
 
 
 # Команда обновления связанных с пользователем учеток. ШАГ 3
