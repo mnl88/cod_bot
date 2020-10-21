@@ -1,7 +1,8 @@
 import config
 from aiogram import types
 from misc import dp
-from alchemy import *
+from alchemy import session, COD_User, datetime
+from alchemy import get_member, get_all_members
 from aiogram import types
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
@@ -17,9 +18,6 @@ admin_commands_list = '/chat_info - chat_info,\n' \
     '/show_players_stats - show_players_stats,\n'
 
 
-session = db_init()
-
-
 @dp.message_handler(user_id=config.ADMIN_ID, commands="chat_info")
 async def chat_info(message: types.Message):
     print(f"Заголовок: {str(message.chat.title)}\nID этого чата: {str(message.chat.id)}")
@@ -28,7 +26,7 @@ async def chat_info(message: types.Message):
 @dp.message_handler(user_id=config.ADMIN_ID, commands="add_manile")
 async def add_me_for_test(message: types.Message):
     tg_id = 202181776
-    manile = get_member(session, tg_id)
+    manile = get_member(tg_id)
     if manile is False:
         print('нету Manile')
         manile = COD_User(tg_id=tg_id)
@@ -44,7 +42,7 @@ async def add_me_for_test(message: types.Message):
 # Обновление всем статистики
 @dp.message_handler(commands=['update_all'])
 async def update_all(message: types.Message):
-    players = get_all_members(session)
+    players = get_all_members()
     for player in players:
         await types.ChatActions.typing()
         player.kd_warzone = parser_act_id(player.activision_id, 'WZ')
@@ -61,7 +59,7 @@ async def update_all(message: types.Message):
 # Обновление своей статистики
 @dp.message_handler(commands=['update_me'])
 async def update_me(message: types.Message):
-    me = get_member(session, message.from_user.id)
+    me = get_member(message.from_user.id)
     print(me)
     await types.ChatActions.typing()
     if me.activision_id != 'Unknown'.lower():
@@ -84,7 +82,7 @@ async def update_me(message: types.Message):
 async def show_players_stats(message: types.Message):
     """показывает статистику всех игроков в базе данных"""
     await types.ChatActions.typing()
-    players = get_all_members(session)
+    players = get_all_members()
     text = ''
     for player in players:
         if player.activision_id != 'Unknown'.lower():
@@ -101,10 +99,10 @@ async def show_players_stats(message: types.Message):
 async def show_my_stats(message: types.Message):
     """показывает статистику игрока"""
     await types.ChatActions.typing()
-    if not get_member(session, message.from_user.id):
+    if not get_member(message.from_user.id):
         await message.answer('Для отображения статистики необходимо указать свой ACTIVISION ID /add_me', reply=True)
     else:
-        me = get_member(session, message.from_user.id)
+        me = get_member(message.from_user.id)
         text = ''
         text0 = "Имя/ник: " + str(me.name) + "\n"
         if me.tg_name != 'unknown':
