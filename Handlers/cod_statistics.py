@@ -10,6 +10,13 @@ import asyncio
 from . import new_handler as new
 from re import *
 
+user_commands_list = '/add_me - add_me,\n' \
+                     '/update_my_account - update_my_account,\n' \
+                     '/delete_me - delete_me,\n'
+
+admin_commands_list = ''
+
+
 session = db_init()
 available_chose = [
     "activision id",

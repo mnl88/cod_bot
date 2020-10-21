@@ -13,6 +13,9 @@ from cod_stats_parser import *
 This bot is created for the demonstration of a usage of inline keyboards.
 """
 
+user_commands_list = '/str - str,\n'
+admin_commands_list = ''
+
 
 @dp.message_handler(commands='str')
 async def start_cmd_handler(message: types.Message):

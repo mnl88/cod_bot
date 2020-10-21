@@ -8,6 +8,15 @@ from aiogram.dispatcher.filters.state import State, StatesGroup
 from cod_stats_parser import *
 import asyncio
 
+user_commands_list = '/update_me - update_me,\n' \
+    '/update_my_account - update_my_account,\n' \
+    '/show_my_stats, /show_me, /me - show_my_stats, show_me, me\n'
+admin_commands_list = '/chat_info - chat_info,\n' \
+    '/add_manile - add_manile,\n' \
+    '/update_all - update_all,\n' \
+    '/show_players_stats - show_players_stats,\n'
+
+
 session = db_init()
 
 

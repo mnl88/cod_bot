@@ -3,7 +3,8 @@ from datetime import *
 from misc import dp
 from aiogram import *
 
-is_ok = True
+user_commands_list = ''
+admin_commands_list = '/spam - spam'
 
 
 @dp.message_handler(commands="spam")
@@ -13,7 +14,7 @@ async def status_set(message: types.Message):
         print(datetime.now())
 
 
-@dp.message_handler()
-async def echo(message: types.Message):
-    await message.answer(message.text)
+# @dp.message_handler()
+# async def echo(message: types.Message):
+#     await message.answer(message.text)
 

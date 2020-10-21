@@ -1,60 +1,5 @@
-import asyncio
-import datetime
-import config
-from aiogram import types
+
 from misc import dp
-from alchemy import *
-from aiogram import types
-from aiogram.dispatcher import FSMContext
-from aiogram.dispatcher.filters.state import State, StatesGroup
-from cod_stats_parser import *
-#
-# available_choose = [
-#     "старт",
-#     "стоп",
-#     "отмена"]
-#
-#
-# class Schedule_state(StatesGroup):
-#     schedule_on = State()
-#     schedule_on22 = State()
-#
-#
-# @dp.message_handler(user_id=config.ADMIN_ID, commands="schedule")
-# async def schedule(message: types.Message):
-#     print('def schedule')
-#     keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
-#     for choose in available_choose:
-#         keyboard.add(choose.lower())
-#     await message.answer(
-#         "Старт, стоп или отмена?", reply_markup=keyboard)
-#     await Schedule_state.schedule_on22.set()
-#     await schedule_set(message)
-#
-#
-# @dp.message_handler(state=Schedule_state.schedule_on.set(), content_types=types.ContentTypes.TEXT)
-# async def schedule_set(message: types.Message, state: FSMContext):
-#     print('def schedule set')
-#     if message.text.lower() not in available_choose:
-#         await message.reply("Пожалуйста, сделайте выбор, используя клавиатуру ниже.")
-#         return
-#     if message.text.lower() == 'отмена':
-#         await state.finish()
-#         await message.reply("есть отмена!!!", reply_markup=types.ReplyKeyboardRemove())
-#         return
-#     await state.update_data(command=message.text.lower())
-#     await Schedule_state.next()  # для простых шагов можно не указывать название состояния, обходясь next()
-#     user_data = await state.get_data()
-#     print(user_data)
-#     await message.reply("напишите " + user_data['user_choose'], reply_markup=types.ReplyKeyboardRemove())
-#
-#
-# @dp.message_handler(commands="infinity")
-# async def schedule_set(message: types.Message, state: FSMContext):
-#     while True:
-#         await asyncio.sleep(3)
-#         if await state.get_data() == "старт":
-#             print('раз-два-три')
 
 import logging
 
@@ -66,6 +11,9 @@ from aiogram.dispatcher.filters import Text
 from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.types import ParseMode
 from aiogram.utils import executor
+
+user_commands_list = ''
+admin_commands_list = '/abc - abc'
 
 
 # States

@@ -5,11 +5,13 @@ from sqlalchemy.engine.url import URL
 from datetime import datetime, date, time
 import config
 
+
+
 DATABASE = {
     'drivername': 'postgres',
     'host': config.DATABASE_HOST,
     'port': config.DATABASE_PORT,
-    'username': config.DATABASE_NAME,
+    'username': config.DATABASE_USER,
     'password': config.DATABASE_PASSWORD,
     'database': config.DATABASE_NAME
 }
@@ -48,6 +50,12 @@ def db_init():
 
 def is_row_exists(session, tg_id):
     """Проверяем, существует ли указанная запись в БД с данным ID"""
+
+    # with engine.connect() as connection:
+    #     result = connection.execute("select username from users")
+    #     for row in result:
+    #         print("username:", row['username'])
+
     if session.query(COD_User).filter_by(tg_id=tg_id).first():
         return True
     return False
@@ -94,6 +102,7 @@ def update_member(session, cod_user):
 
 
 def create_all_to_test(session):
+    """Заполняет базу данных несколькими придуманными пользователями"""
     nikita_user = COD_User(tg_id=202181776, tg_name='MaNiLe88', name='Никита')
     session.add(nikita_user)
     print(nikita_user)
