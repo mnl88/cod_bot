@@ -6,5 +6,5 @@ from aiogram.contrib.fsm_storage.memory import MemoryStorage
 
 bot = Bot(token=config.API_TOKEN)
 dp = Dispatcher(bot, storage=MemoryStorage())
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
