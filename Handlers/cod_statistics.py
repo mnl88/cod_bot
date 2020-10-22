@@ -1,7 +1,8 @@
 import config
 from aiogram import types
 from misc import dp
-from alchemy import *
+from alchemy import session
+from alchemy import is_row_exists, get_member, add_member
 from aiogram import types
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
@@ -17,7 +18,6 @@ user_commands_list = '/add_me - add_me,\n' \
 admin_commands_list = ''
 
 
-session = db_init()
 available_chose = [
     "activision id",
     "psn id",
@@ -33,13 +33,13 @@ class OrderSetId(StatesGroup):
 # Команда добавления пользователя
 @dp.message_handler(commands=['add_me'])
 async def add_user_to_bd(message: types.Message):
-    if is_row_exists(session, message.from_user.id):
-        member = get_member(session, message.from_user.id)
+    if is_row_exists(message.from_user.id):
+        member = get_member(message.from_user.id)
         await message.answer(str(message.from_user.first_name) + ", вы уже были зарегистрированы ранее")
         await new.show_my_stats(message)
 
     else:  # если юзера нет в базе, добавляем его
-        member = add_member(session, message.from_user.id, message.from_user.username)
+        member = add_member(message.from_user.id, message.from_user.username)
         await message.answer(str(message.from_user.first_name) + ", добро пожаловать в клуб!")
     await update_my_profile_step_1(message)
     print(member)
@@ -80,7 +80,7 @@ async def update_my_profile_step_2(message: types.Message, state: FSMContext):  
 # Команда обновления связанных с пользователем учеток. ШАГ 3
 @dp.message_handler(state=OrderSetId.upgrade_id_in_bd, content_types=types.ContentTypes.TEXT)
 async def update_my_profile_step_3(message: types.Message, state: FSMContext):
-    me = get_member(session, message.from_user.id)
+    me = get_member(message.from_user.id)
     await state.update_data(value=message.text)
     user_data = await state.get_data()
     print(user_data)
@@ -93,7 +93,6 @@ async def update_my_profile_step_3(message: types.Message, state: FSMContext):
     if user_data['user_choose'] == 'имя или прозвище':
         pattern = compile('\w')
     is_valid = pattern.match(user_data['value'])
-
 
     keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
     for chose in available_chose:
