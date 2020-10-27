@@ -1,18 +1,23 @@
-version: "3.1"
+version: "3.8" 
+
+volumes:
+        db_volume:
+                name: Postges_volume
+
 
 services:
-   
-   postgres_simple:
-      image: postgres
-      volumes:
-      - postgres_data: $HOME/docker/volumes/postgres_simple:/var/lib/postgresql/data
-      ports:
-      - 5432:5432
-      - 8080:8080
-      environment:
-      - POSTGRES_USER=Nikita
-      - POSTGRES_PASSWORD=9492088
-      - POSTGRES_DB=hello_django_dev
-      restart: always
-
+        postgres:
+                image: postgres
+                container_name: Postgres_DB
+                restart:  always
+                environment:
+                        - TZ=Europe/Moscow 
+                        - POSTGRES_USER=${POSTGRES_USER}
+                        - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+                        - POSTGRES_DB=${POSTGRES_DB}
+                ports:
+                        - 5432:5432
+                volumes:
+                        - db_volume:/var/lib/postgresql/data
+        cod_bot:
 
