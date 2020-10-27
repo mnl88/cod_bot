@@ -3,7 +3,6 @@ from misc import dp
 from config import ADMIN_ID
 
 
-
 @dp.message_handler(commands=['about', 'start'])
 async def about_bot(message: types.Message):
     """Информация о боте"""
@@ -16,10 +15,22 @@ async def about_bot(message: types.Message):
              reply=True)
 
 
-@dp.message_handler(commands=['command_list', 'list'])
+@dp.message_handler(commands=['command_list', 'list', 'help'])
 async def commands_list(message: types.Message):
     """Список всех команд"""
-    text = 'Список команд:\n' + 'empty'
+    text = \
+        'Список команд:\n\n' + \
+        '/about - о боте,\n' + \
+        '/command_list - список основных команд,\n' + \
+        '/me - показать информацию о своём профиле,\n' + \
+        '/edit_me - редактировать свой профиль,\n' + \
+        '/stat - показать информацию о своём КД,\n' + \
+        '/stat_update - обновить информацию о своём КД.'
+
     if message.from_user.id == ADMIN_ID:
-        text += '\n\nСписок команд для администраторов:\n' + 'empty'
+        text += '\n\nСписок команд для администраторов:\n\n' + \
+                '/set_commands - установить команды вместо BotFather,\n' + \
+                '/clear_commands - удалить команды вместо BotFather,\n' +  \
+                '/chat_info - вывести ID чата,\n' + \
+                '/stats_update_all - обновляет статистику по КД всем зарегистрированным пользователей.'
     await message.answer(text=text, reply=False)

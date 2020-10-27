@@ -1,17 +1,8 @@
-import asyncio
-from datetime import datetime
-from misc import dp
-from aiogram import types
 from config import ADMIN_ID
-import config
-from aiogram import types
 from misc import dp
 from alchemy import session, COD_User, datetime
 from alchemy import get_member, get_all_members
 from aiogram import types
-from aiogram.dispatcher import FSMContext
-from aiogram.dispatcher.filters.state import State, StatesGroup
-from cod_stats_parser import *
 import asyncio
 
 
@@ -33,7 +24,7 @@ async def add_me_for_test(message: types.Message):
     print(manile)
 
 
-@dp.message_handler(commands="spam")
+@dp.message_handler(user_id=ADMIN_ID, commands="spam")
 async def status_set(message: types.Message):
     i = 0
     while True:
@@ -42,9 +33,5 @@ async def status_set(message: types.Message):
         i += 1
         if i == 10:
             break
-        # print(datetime.now())
 
-# @dp.message_handler()
-# async def echo(message: types.Message):
-#     await message.answer(message.text)
 

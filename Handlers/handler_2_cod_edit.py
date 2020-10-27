@@ -4,88 +4,159 @@
 
 from misc import dp
 from alchemy import session
-from alchemy import is_row_exists, get_member, add_member, get_all_members, datetime
+from alchemy import is_row_exists, get_member, COD_User
 from aiogram import types
 from aiogram.dispatcher import FSMContext
+from aiogram.dispatcher.filters import Text
 from aiogram.dispatcher.filters.state import State, StatesGroup
-from .handler_3_cod_stats import show_profile, show_stats
-from cod_stats_parser import parser_act_id
-import asyncio
-from re import *
+from .handler_3_cod_stats import show_profile
+from re import compile
 
 
-available_chose = [
+available_chose_edition = [
     "activision id",
     "psn id",
-    "имя или прозвище",
-    "отмена"]
+    "имя или прозвище"]
 
 
-class OrderSetId(StatesGroup):
-    waiting_for_choose_id = State()
-    upgrade_id_in_bd = State()
+class OrderAddUser(StatesGroup):
+    waiting_for_enter_activision_id = State()
+
+
+class OrderEditUser(StatesGroup):
+    waiting_for_choose_parameter = State()
+    waiting_for_choose_data = State()
+    waiting_for_continue_editing = State()
+
+
+# Прервать любой их Хэндлеров
+@dp.message_handler(state='*', commands=['cancel', 'отмена'])
+@dp.message_handler(Text(equals=['cancel', 'отмена'], ignore_case=True), state='*')
+async def cancel_handler(message: types.Message, state: FSMContext):
+    """
+    Allow user to cancel any action
+    """
+    # Cancel state and inform user about it
+    await state.finish()
+    # And remove keyboard (just in case)
+    await message.reply('Cancelled.', reply_markup=types.ReplyKeyboardRemove())
 
 
 # Команда добавления пользователя. ШАГ 1
 @dp.message_handler(commands=['add_me'], state="*")
-async def add_user_to_bd(message: types.Message):
+async def add_user_to_bd_step_1(message: types.Message):
     if is_row_exists(message.from_user.id):
         await message.answer(
             str(message.from_user.first_name) + ", вы уже были зарегистрированы ранее." +
             "\nДля внесения изменений воспользуйтесь командой: /edit_me"
             )
-        await show_profile(message, False)
     else:
         keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
-        for chose in available_chose:
-            keyboard.add(chose.upper())
+        keyboard.add("отмена")
         await message.answer(
-            "Для правильной работы БОТА трубется указать следующие данные:\n\n" +
-            "ACTIVISION_ID - ОБЯЗАТЕЛЬНО, \nпример: Ivan#123456789 \n\n" +
-            "PSN_ID - необязательно, нужно для добавления в ТУСОВКУ, \nпример: Ivan_Ivanov_1999 \n\n" +
-            "ИМЯ или ПРОЗВИЩЕ - необязательно, нужно для того, чтобы к вам могли обращаться по имени, \nпример: Иван \n"
+            "Для правильной работы сообщите мне ACTIVISION_ID:\n" +
+            "\nпример: Ivan_Ivanov#123456789"
             , reply_markup=keyboard)
-        await OrderSetId.waiting_for_choose_id.set()
+        await OrderAddUser.waiting_for_enter_activision_id.set()
 
 
-# Команда обновления связанных с пользователем учеток. ШАГ 2
-@dp.message_handler(state=OrderSetId.waiting_for_choose_id, content_types=types.ContentTypes.TEXT)
+# Команда добавления пользователя. ШАГ 2
+@dp.message_handler(state=OrderAddUser.waiting_for_enter_activision_id, content_types=types.ContentTypes.TEXT)
 async def add_user_to_bd_step_2(message: types.Message, state: FSMContext):  # обратите внимание, есть второй аргумент
-    if message.text.lower() not in available_chose:
-        await message.reply("Пожалуйста, сделайте выбор, используя клавиатуру ниже.")
-        return
-    if message.text.lower() == 'отмена':
-        await state.finish()
-        await message.reply("есть отмена!!!", reply_markup=types.ReplyKeyboardRemove())
-        return
-    await state.update_data(user_choose=message.text.lower())
-    await OrderSetId.next()  # для простых шагов можно не указывать название состояния, обходясь next()
+    # if message.text.lower() == 'отмена':
+    #     await state.finish()
+    #     await message.reply("отмена", reply_markup=types.ReplyKeyboardRemove())
+    #     return
+    member = COD_User(tg_id=message.from_user.id)
+    if get_member(message.from_user.id) is not False:
+        member = get_member(message.from_user.id)
+    await state.update_data(Activision_ID=message.text)
     user_data = await state.get_data()
-    print(user_data)
-    await message.reply("напишите " + user_data['user_choose'], reply_markup=types.ReplyKeyboardRemove())
+    print(f'{user_data=}')
+
+    pattern = compile('.+#+\d{0,20}')
+    is_valid = pattern.match(user_data['Activision_ID'])
+    if is_valid:
+        member.activision_id = user_data['Activision_ID']
+        session.add(member)
+        session.commit()
+        print(member)
+        print('Данные прошли валидацию')
+        await message.reply(
+            message.from_user.first_name + ", благодарим за регистрацию!\n" +
+            "для внесения дополнительной информации о себе советуем воспользоваться командой /edit_me",
+            reply_markup=types.ReplyKeyboardRemove()
+            )
+    else:
+        print('Данные не прошли валидацию')
+        await message.reply(message.from_user.first_name +
+                            ", указанный вами Activision ID (" + user_data['Activision_ID'] +
+                            ") НЕ ПРОШЁЛ ВАЛИДАЦИЮ И НЕ БЫЛ СОХРАНЁН!\n\n" +
+                            "ещё одна попытка?! /add_me", reply_markup=types.ReplyKeyboardRemove()
+                            )
+    await state.finish()
 
 
-# Команда обновления связанных с пользователем учеток. ШАГ 3
-@dp.message_handler(state=OrderSetId.upgrade_id_in_bd, content_types=types.ContentTypes.TEXT)
-async def add_user_to_bd_step_3(message: types.Message, state: FSMContext):
-    member = get_member(message.from_user.id)
-    await state.update_data(value=message.text)
-    user_data = await state.get_data()
-    print(user_data)
+# Команда редактирования пользователя. ШАГ 1. Выбор, какой параметр редактировать
+@dp.message_handler(commands=['edit_me'], state="*")
+async def edit_user_profile_step_1(message: types.Message):
+    if is_row_exists(message.from_user.id) is False:
+        await message.answer(
+            str(message.from_user.first_name) + ", вы не зарегистрированы." +
+            "\nДля регистрации воспользуйтесь командой: /add_me"
+            )
+    else:
+        await show_profile(message, False)
+        keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
+        for chose in available_chose_edition:
+            keyboard.add(chose.upper())
+        keyboard.add("отмена")
+        await message.answer(
+            "Вы можете указать/отредактировать следующие данные:\n\n" +
+            "ACTIVISION_ID - необьходим для работы БОТА \nпример: Ivan#123456789\n\n" +
+            "PSN_ID - для добавления в ТУСОВКУ, \nпример: Ivan_Ivanov_1999\n\n" +
+            "ИМЯ или ПРОЗВИЩЕ - для того, чтобы к вам могли обращаться по имени, \nпример: Просто Иван\n\n\n" +
+            "указание другого параметра приведёт к отмене редактирования"
+            , reply_markup=keyboard)
+        await OrderEditUser.waiting_for_choose_parameter.set()
 
+
+# Команда редактирования пользователя. ШАГ 2. Уточняем значение того параметра, что указали ранее...
+@dp.message_handler(state=OrderEditUser.waiting_for_choose_parameter, content_types=types.ContentTypes.TEXT)
+async def edit_user_profile_step_2(message: types.Message, state: FSMContext):
+    await message.reply("введите", reply_markup=types.ReplyKeyboardRemove())
+    selected_choose = message.text.lower()
+
+    if selected_choose in available_chose_edition:
+        await state.update_data(user_choose=message.text.lower())
+        user_data = await state.get_data()
+        print(f'{user_data=}')
+        await OrderEditUser.waiting_for_choose_data.set()
+    else:
+        await cancel_handler(message)
+        # await state.finish()
+        # await message.reply("отмена", reply_markup=types.ReplyKeyboardRemove())
+        # return
+
+
+# Команда редактирования пользователя. ШАГ 3. Сохраняем введенное значение...
+@dp.message_handler(state=OrderEditUser.waiting_for_choose_data, content_types=types.ContentTypes.TEXT)
+async def edit_user_profile_step_3(message: types.Message, state: FSMContext):
+    member = COD_User(tg_id=message.from_user.id)
+    if get_member(message.from_user.id) is not False:
+        member = get_member(message.from_user.id)
     pattern = compile('')
+    user_data = await state.get_data()
     if user_data['user_choose'] == 'activision_id':
         pattern = compile('.+#+\d{0,20}')
     if user_data['user_choose'] == 'psn id':
         pattern = compile('\w')
     if user_data['user_choose'] == 'имя или прозвище':
         pattern = compile('\w')
-    is_valid = pattern.match(user_data['value'])
-
-    keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    for chose in available_chose:
-        keyboard.add(chose.upper())
-
+    is_valid = pattern.match(user_data['user_choose'])
+    await state.update_data(value=message.text)
+    user_data = await state.get_data()
+    print(f'{user_data=}')
     if is_valid:
         if user_data['user_choose'] == 'activision id':
             member.activision_id = user_data['value']
@@ -95,92 +166,32 @@ async def add_user_to_bd_step_3(message: types.Message, state: FSMContext):
             member.name = user_data['value']
         session.add(member)
         session.commit()
-        print(member)
-        print('Данные прошли валидацию')
-        await message.reply(message.from_user.first_name +
-                            ", вы выбрали обновить " + user_data['user_choose'] +
-                            " и указали значение " + user_data['value'] +
-                            ".\n\nХотите ещё что-то добавить/изменить?", reply_markup=keyboard
-                            )
-
+        await message.reply(
+            message.from_user.first_name + ", вы выбрали обновить " + user_data['user_choose'] +
+            " и указали значение " + user_data['value'], reply_markup=types.ReplyKeyboardRemove()
+            )
     else:
-        print('Данные не прошли валидацию')
-        await message.reply(message.from_user.first_name +
-                            ", вы выбрали обновить " + user_data['user_choose'] +
-                            " и указали значение " + user_data['value'] +
-                            "\n\nУКАЗАННЫЕ ВАМИ ДАНЫЕ НЕ ПРОШЛИ ВАЛИДАЦИЮ И НЕ БЫЛИ СОХРАНЕНЫ!\n" +
-                            "Хотите что-то добавить/изменить?", reply_markup=keyboard
-                            )
-    await OrderSetId.first()
+        await message.reply(
+            message.from_user.first_name + ", вы выбрали обновить " + user_data['user_choose'] +
+            " и указали значение " + user_data['value'] + "\n\n"
+            "УКАЗАННЫЕ ВАМИ ДАНЫЕ НЕ ПРОШЛИ ВАЛИДАЦИЮ И НЕ БЫЛИ СОХРАНЕНЫ!", reply_markup=types.ReplyKeyboardRemove()
+            )
+    await OrderEditUser.waiting_for_continue_editing.set()
+    keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    keyboard.add("Продолжить редактирование")
+    keyboard.add("Завершить редактирование")
+    await message.answer(
+        "Продолжить редактирование профиля?\n\n", reply_markup=keyboard)
 
 
-# Обновление статистики по КД
-@dp.message_handler(commands=['update_stat'])
-async def update_me(message: types.Message):
-    member = get_member(message.from_user.id)
-    print(member)
-    await types.ChatActions.typing()
-    if member.activision_id != 'Unknown'.lower():
-        member.kd_warzone = parser_act_id(member.activision_id, 'WZ')
-        member.kd_multiplayer = parser_act_id(member.activision_id, 'MP')
-        member.update_kd = datetime.now()
-        member.tg_name = message.from_user.username
-        session.add(member)
-        session.commit()
-        print(member)
-        print(member.kd_warzone)
-        print(member.kd_multiplayer)
-        await message.answer(message.from_user.first_name + ", статистика обновлена")
+# Команда редактирования пользователя. ШАГ 4. Продолжить или прервать редактирование?
+@dp.message_handler(state=OrderEditUser.waiting_for_continue_editing, content_types=types.ContentTypes.TEXT)
+async def edit_user_profile_step_4(message: types.Message, state: FSMContext):
+    if message.text == "Продолжить редактирование":
+        await edit_user_profile_step_1(message)
     else:
-        await message.answer(message.from_user.first_name +
-                             ", вам необходимо уточнить свой ACTIVISION_ID, для этого воспользуйтесь командой /add_me")
+        await state.finish()
+        await message.reply("Редактирование профиля завершено", reply=True, reply_markup=types.ReplyKeyboardRemove())
+        return
 
 
-# Обновление всем статистики
-@dp.message_handler(commands=['update_all'])
-async def update_all(message: types.Message):
-    players = get_all_members()
-    for player in players:
-        await types.ChatActions.typing()
-        player.kd_warzone = parser_act_id(player.activision_id, 'WZ')
-        player.kd_multiplayer = parser_act_id(player.activision_id, 'MP')
-        player.update_kd = datetime.now()
-        print(player)
-        print(player.kd_warzone)
-        print(player.kd_multiplayer)
-        session.add(player)
-    session.commit()
-    await message.answer(message.from_user.first_name + ", статистика обновлена")
-
-
-
-# Команда редактирования пользователя
-@dp.message_handler(commands=['edit_me'])
-async def edit_user_in_bd(message: types.Message):
-    if is_row_exists(message.from_user.id):
-        member = get_member(message.from_user.id)
-        await message.answer(str(message.from_user.first_name) + ", вы уже были зарегистрированы ранее")
-        await show_stats(message)
-
-    else:  # если юзера нет в базе, добавляем его
-        member = add_member(message.from_user.id, message.from_user.username)
-        await message.answer(str(message.from_user.first_name) + ", добро пожаловать в клуб!")
-    await(message)
-
-    print(member)
-
-
-
-
-
-# Команда отписки
-# @dp.message_handler(commands=['delete_me'])
-# async def delete_member(message: types.Message):
-#     if not db.member_exists(message.from_user.id):
-#         # если юзера нет в базе, добавляем его с неактивной подпиской (запоминаем)
-#         db.add_member(message.from_user.id, message.from_user.username, False)
-#         await message.answer("Вы даже к нам не заходили!")
-#     else:
-#         # если он уже есть, то просто обновляем ему статус подписки
-#         db.update_member(message.from_user.id, False)
-#         await message.answer("Что ж, прощай, бывший друг!!!")
