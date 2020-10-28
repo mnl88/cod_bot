@@ -26,11 +26,11 @@ async def commands_list(message: types.Message):
         '/edit_me - редактировать свой профиль,\n' + \
         '/stat - показать информацию о своём КД,\n' + \
         '/stat_update - обновить информацию о своём КД.'
-
     if message.from_user.id == ADMIN_ID:
         text += '\n\nСписок команд для администраторов:\n\n' + \
                 '/set_commands - установить команды вместо BotFather,\n' + \
                 '/clear_commands - удалить команды вместо BotFather,\n' +  \
                 '/chat_info - вывести ID чата,\n' + \
-                '/stats_update_all - обновляет статистику по КД всем зарегистрированным пользователей.'
+                '/stats_update_all - обновляет статистику по КД всем зарегистрированным пользователей.\n' + \
+                '/stats_all - показать информацию о всех пользователях и их КД'
     await message.answer(text=text, reply=False)
