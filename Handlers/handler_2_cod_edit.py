@@ -12,6 +12,7 @@ from aiogram.dispatcher.filters.state import State, StatesGroup
 from .handler_3_cod_stats import show_profile
 from re import compile
 from config import COD_CHAT_ID
+from aiogram.types.chat import ChatType
 
 
 available_chose_edition = [
@@ -43,8 +44,16 @@ async def cancel_handler(message: types.Message, state: FSMContext):
     await message.reply('Cancelled.', reply_markup=types.ReplyKeyboardRemove())
 
 
+@dp.message_handler(chat_type=['group', 'supergroup'], commands=['add_me', 'edit_me'], state="*")
+async def show_stats_all(message: types.Message, is_reply=True):
+    """показывает статистику всех игроков в базе данных"""
+    await types.ChatActions.typing()
+    await message.answer(f'Для выполнения команды {message.text} её нужно написать мне в личном сообщении',
+                         reply=is_reply)
+
+
 # Команда добавления пользователя. ШАГ 1
-@dp.message_handler(chat_id=COD_CHAT_ID, commands=['add_me'], state="*")
+@dp.message_handler(chat_type=['private'], commands=['add_me'], state="*")
 async def add_user_to_bd_step_1(message: types.Message):
     if is_row_exists(message.from_user.id):
         await message.answer(
@@ -95,7 +104,7 @@ async def add_user_to_bd_step_2(message: types.Message, state: FSMContext):  # �
 
 
 # Команда редактирования пользователя. ШАГ 1. Выбор, какой параметр редактировать
-@dp.message_handler(chat_id=COD_CHAT_ID, commands=['edit_me'], state="*")
+@dp.message_handler(chat_type=['private'], commands=['edit_me'], state="*")
 async def edit_user_profile_step_1(message: types.Message):
     if is_row_exists(message.from_user.id) is False:
         await message.answer(

@@ -8,7 +8,7 @@ from alchemy import session
 from alchemy import get_member, get_all_members, datetime, COD_User
 from aiogram import types
 from cod_stats_parser import parser_act_id
-from config import ADMIN_ID
+from config import ADMIN_ID, COD_CHAT_ID
 
 
 # Показывает данные пользователя (Имя, Activision ID и PSN ID)
@@ -40,7 +40,9 @@ async def show_stat(message: types.Message):
 
 
 # Показывает статистику по КД всех зарегистрированных пользователей
-@dp.message_handler(commands="stats_all")
+@dp.message_handler(chat_type=['group', 'supergroup'], is_chat_admin=True,
+                    chat_id=COD_CHAT_ID, commands=['stats_all'])
+@dp.message_handler(user_id=ADMIN_ID, commands=['stats_all'])
 async def show_stats_all(message: types.Message, is_reply=True):
     """показывает статистику всех игроков в базе данных"""
     await types.ChatActions.typing()
@@ -80,6 +82,8 @@ async def stat_update(message: types.Message):
 
 
 # Обновляет статистику по КД всем зарегистрированным пользователей
+@dp.message_handler(chat_type=['group', 'supergroup'], is_chat_admin=True,
+                    chat_id=COD_CHAT_ID, commands=['stats_update_all'])
 @dp.message_handler(user_id=ADMIN_ID, commands=['stats_update_all'])
 async def stats_update_all(message: types.Message):
     players = get_all_members()
@@ -94,3 +98,11 @@ async def stats_update_all(message: types.Message):
         session.add(player)
     session.commit()
     await message.answer(message.from_user.first_name + ", статистика обновлена")
+
+
+@dp.message_handler(chat_type=['group', 'supergroup', 'private'], commands=['stats_update_all', 'stats_all'])
+async def show_stats_all(message: types.Message, is_reply=True):
+    """показывает статистику всех игроков в базе данных"""
+    await types.ChatActions.typing()
+    await message.answer(
+        'Данную команду может выполнить только пользователь с правами админимтратора', reply=is_reply)
