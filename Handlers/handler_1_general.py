@@ -1,6 +1,5 @@
 from aiogram import types
 from misc import dp
-from config import ADMIN_ID
 
 
 @dp.message_handler(commands=['about', 'start'])
