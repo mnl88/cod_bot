@@ -11,6 +11,7 @@ from aiogram.dispatcher.filters import Text
 from aiogram.dispatcher.filters.state import State, StatesGroup
 from .handler_3_cod_stats import show_profile
 from re import compile
+from config import COD_CHAT_ID
 
 
 available_chose_edition = [
@@ -43,7 +44,7 @@ async def cancel_handler(message: types.Message, state: FSMContext):
 
 
 # Команда добавления пользователя. ШАГ 1
-@dp.message_handler(commands=['add_me'], state="*")
+@dp.message_handler(chat_id=COD_CHAT_ID, commands=['add_me'], state="*")
 async def add_user_to_bd_step_1(message: types.Message):
     if is_row_exists(message.from_user.id):
         await message.answer(
@@ -63,10 +64,6 @@ async def add_user_to_bd_step_1(message: types.Message):
 # Команда добавления пользователя. ШАГ 2
 @dp.message_handler(state=OrderAddUser.waiting_for_enter_activision_id, content_types=types.ContentTypes.TEXT)
 async def add_user_to_bd_step_2(message: types.Message, state: FSMContext):  # обратите внимание, есть второй аргумент
-    # if message.text.lower() == 'отмена':
-    #     await state.finish()
-    #     await message.reply("отмена", reply_markup=types.ReplyKeyboardRemove())
-    #     return
     member = COD_User(tg_id=message.from_user.id)
     if get_member(message.from_user.id) is not False:
         member = get_member(message.from_user.id)
@@ -98,7 +95,7 @@ async def add_user_to_bd_step_2(message: types.Message, state: FSMContext):  # �
 
 
 # Команда редактирования пользователя. ШАГ 1. Выбор, какой параметр редактировать
-@dp.message_handler(commands=['edit_me'], state="*")
+@dp.message_handler(chat_id=COD_CHAT_ID, commands=['edit_me'], state="*")
 async def edit_user_profile_step_1(message: types.Message):
     if is_row_exists(message.from_user.id) is False:
         await message.answer(
