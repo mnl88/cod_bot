@@ -11,8 +11,6 @@ from aiogram.dispatcher.filters import Text
 from aiogram.dispatcher.filters.state import State, StatesGroup
 from .handler_3_cod_stats import show_profile
 from re import compile
-from config import COD_CHAT_ID
-from aiogram.types.chat import ChatType
 
 
 available_chose_edition = [

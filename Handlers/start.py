@@ -2,12 +2,12 @@ from aiogram import types
 from aiogram.dispatcher.filters import CommandStart
 from re import compile
 from misc import dp
-from config import ADMIN_ID, CHAT_TEST_ID
+from config import ADMIN_ID, COD_CHAT_ID
 from .handler_2_cod_edit import add_user_to_bd_step_1
 
 
 # Запускаем бот из группы
-@dp.message_handler(chat_id=CHAT_TEST_ID, chat_type=['group', 'supergroup'], commands=['about_cod_bot', 'start'])
+@dp.message_handler(chat_id=COD_CHAT_ID, chat_type=['group', 'supergroup'], commands=['about_cod_bot', 'start'])
 async def start_bot_not_in_the_main_group(message: types.Message):
     """Информация о боте"""
     bot_user = await dp.bot.get_me()
