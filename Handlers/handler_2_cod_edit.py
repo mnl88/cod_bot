@@ -44,12 +44,12 @@ async def cancel_handler(message: types.Message, state: FSMContext):
     await message.reply('Cancelled.', reply_markup=types.ReplyKeyboardRemove())
 
 
-@dp.message_handler(chat_type=['group', 'supergroup'], commands=['add_me', 'edit_me'], state="*")
-async def show_stats_all(message: types.Message, is_reply=True):
-    """показывает статистику всех игроков в базе данных"""
-    await types.ChatActions.typing()
-    await message.answer(f'Для выполнения команды {message.text} её нужно написать мне в личном сообщении',
-                         reply=is_reply)
+# @dp.message_handler(chat_type=['group', 'supergroup'], commands=['add_me', 'edit_me'], state="*")
+# async def show_stats_all(message: types.Message, is_reply=True):
+#     """показывает статистику всех игроков в базе данных"""
+#     await types.ChatActions.typing()
+#     await message.answer(f'Для выполнения команды {message.text} её нужно написать мне в личном сообщении',
+#                          reply=is_reply)
 
 
 # Команда добавления пользователя. ШАГ 1

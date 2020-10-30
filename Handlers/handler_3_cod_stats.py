@@ -12,7 +12,7 @@ from config import ADMIN_ID, COD_CHAT_ID
 
 
 # Показывает данные пользователя (Имя, Activision ID и PSN ID)
-@dp.message_handler(commands=['profile', 'me'])
+@dp.message_handler(chat_type='private', commands=['profile'])
 async def show_profile(message: types.Message, is_reply=True):
     """показывает данные пользователя"""
     await types.ChatActions.typing()
@@ -26,7 +26,7 @@ async def show_profile(message: types.Message, is_reply=True):
 
 
 # Показывает статистику по КД
-@dp.message_handler(commands=['stat'])
+@dp.message_handler(commands=['stat', 'me'])
 async def show_stat(message: types.Message):
     """показывает статистику игрока"""
     await types.ChatActions.typing()
@@ -60,7 +60,7 @@ async def show_stats_all(message: types.Message, is_reply=True):
 
 
 # Обновляет статистику по КД
-@dp.message_handler(commands=['stat_update'])
+@dp.message_handler(chat_type='private', commands=['stat_update'])
 async def stat_update(message: types.Message):
     member = get_member(message.from_user.id)
     print(member)

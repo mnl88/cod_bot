@@ -10,12 +10,9 @@ admin_commands_list = '/set_commands - УСТАНОВИТЬ КОМАНДЫ вм�
 async def set_commands_to_bf(message: types.Message):
     """УСТАНОВИТЬ КОМАНДЫ вместо BotFather"""
 
-    commands = [types.BotCommand(command="/about", description="О боте"),
-                types.BotCommand(command="/command_list", description="Список основных команд"),
-                types.BotCommand(command="/me", description="Показать информацию о своём профиле"),
-                types.BotCommand(command="/edit_me", description="Редактировать свой профиль"),
-                types.BotCommand(command="/stat", description="Показать информацию о своём КД"),
-                types.BotCommand(command="/stat_update", description="Обновить информацию о своём КД")]
+    commands = [
+        types.BotCommand(command="/about_cod_bot", description="О боте")
+                ]
     await bot.set_my_commands(commands)
     await message.answer("Команды настроены. Перезапустите Telegram")
 
