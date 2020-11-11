@@ -137,7 +137,7 @@ async def edit_user_profile_step_2(message: types.Message, state: FSMContext):
         print(f'{user_data=}')
         await OrderEditUser.waiting_for_choose_data.set()
     else:
-        await cancel_handler(message)
+        await cancel_handler(message, state)
         # await state.finish()
         # await message.reply("отмена", reply_markup=types.ReplyKeyboardRemove())
         # return
