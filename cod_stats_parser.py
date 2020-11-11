@@ -61,11 +61,11 @@ def parser_act_id(activision_id, game_type='WZ'):
         kd_ratio = get_content(html, game_type)
         return kd_ratio
     else:
-        print(f'{html}, {html.status_code}')
+        print(f'Что-то не так {html}, {html.status_code}')
 
 
 def main():
-    activision_id = 'Imago#1393409'
+    activision_id = 'BrozyBro#3779498'
 
     kd_wz = parser_act_id(activision_id, 'WZ')
     print(kd_wz)

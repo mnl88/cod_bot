@@ -35,7 +35,7 @@ class COD_User(DeclarativeBase):
     ready_to_play_comment = Column('ready_to_play_comment', String(250), default='')
 
     def __repr__(self):
-        return "<COD-USER: ('%s','%s','%s','%s')>" % (self.tg_id, self.tg_name, self.activision_id, self.name)
+        return "<COD-USER: ('%s','%s','%s','%s', '%s')>" % (self.tg_id, self.tg_name, self.activision_id, self.psn_id, self.name)
 
 
 engine = create_engine(URL(**DATABASE))
@@ -85,6 +85,7 @@ def add_member(tg_id, tg_name='empty'):
         else:
             print('пользователь с данным ID уже есть в БД')
             return False
+
 
 def update_member(cod_user):
     """Обновляем данные об участнике"""
