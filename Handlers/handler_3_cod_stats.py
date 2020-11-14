@@ -9,6 +9,11 @@ from alchemy import get_member, get_all_members, datetime, COD_User
 from aiogram import types
 from cod_stats_parser import parser_act_id
 from config import ADMIN_ID, COD_CHAT_ID
+import re
+import logging
+
+
+logger = logging.getLogger(__name__)
 
 
 # Показывает данные пользователя (Имя, Activision ID и PSN ID)
@@ -25,18 +30,60 @@ async def show_profile(message: types.Message, is_reply=True):
         await message.answer(text, reply=is_reply)
 
 
+
+
+
 # Показывает статистику по КД
-@dp.message_handler(commands=['stat', 'me'])
+@dp.message_handler(commands=['stat'])
 async def show_stat(message: types.Message):
     """показывает статистику игрока"""
-    await types.ChatActions.typing()
-    if not get_member(message.from_user.id):
-        await message.answer(
-            'Для отображения статистики необходимо сообщить мне свой ACTIVISION ID: /add_me', reply=True)
-    else:
-        cod_user = get_member(message.from_user.id)
-        text = load_profile(cod_user) + load_kd(cod_user)
-        await message.answer(text, reply=True)
+
+    members = []
+
+    pattern = re.compile('@+\w{0,100}')  # паттерн, для нахождения упоминаний в тексте
+    username_list = re.findall(pattern, message.text)  # Список упоминаний по username в данном сообщении
+    print(f'В указанном тексте {len(username_list)} упоминаний по username')
+
+    # часть кода, для mention
+    for mention in username_list:
+        mention = mention.replace('@', '')  # Удалим из списка символ @
+        print(f'Username = {mention}')
+        await types.ChatActions.typing()  # бот типа печатает
+        member = get_member(tg_name=mention)
+        if member is not False:
+            print(f'{member=}')
+            members.append(member)
+
+    # часть кода, для text_mention
+    for entity in message.entities:  # перебираем сущности
+        if entity.type == 'text_mention':  # если находим упоминания
+            await types.ChatActions.typing()  # бот типа печатает
+            member = get_member(tg_id=entity.user.id)
+            if member is not False:
+                print(f'{member=}')
+                members.append(member)
+
+    # если упоминаний нет, то добавляем в список себя
+    if len(members) == 0:
+
+        if get_member(message.from_user.id):
+            me = get_member(message.from_user.id)
+            members.append(me)
+        else:
+            await message.answer(
+                'Для отображения статистики необходимо сообщить мне свой ACTIVISION ID, для этого напишите личное сообщение боту напрямую', reply=True)
+
+    await show_statistic(message, members)
+
+
+# Показывает статистику по КД
+async def show_statistic(message: types.Message, members: list):
+    """показывает статистику игрока"""
+    if len(members) != 0:
+        for member in members:
+            await types.ChatActions.typing()
+            text = load_profile(member) + load_kd(member)
+            await message.answer(text, reply=True)
 
 
 # Показывает статистику по КД всех зарегистрированных пользователей
@@ -45,17 +92,27 @@ async def show_stat(message: types.Message):
 @dp.message_handler(user_id=ADMIN_ID, commands=['stats_all'])
 async def show_stats_all(message: types.Message, is_reply=True):
     """показывает статистику всех игроков в базе данных"""
+    logger.info(
+        f'Хэндлер STATS_ALL запущен пользователем с id {message.from_user.id} '
+        f'({message.from_user.full_name}, {message.from_user.username})')
     await types.ChatActions.typing()
     players = get_all_members()
+    logger.info(f'Из БД загружено {len(players)} записей')
     text = ''
-    for player in players:
-        if player.activision_id != 'Unknown'.lower():
-            if player.tg_name != 'unknown':
-                text += "Имя в Телеге: @" + str(player.tg_name) + "\n"
-            text2 = "ACTIVISION ID: " + str(player.activision_id) + "\n"
-            text3 = "К/Д в Варзоне: " + str(player.kd_warzone) + "\n"
-            text4 = "К/Д в мультиплеере: " + str(player.kd_multiplayer) + "\n\n"
-            text += text2 + text3 + text4
+    players_with_kd = []
+    for player in players:  # Обрезаем тех, чье КД = None
+        a = player.kd_warzone
+        if a != 'unknown':
+            print(player, a)
+            players_with_kd.append(player)
+
+    for player in sorted(players_with_kd, key=lambda user: user.kd_warzone):
+        if player.tg_name != 'unknown':
+            text += "Имя в Телеге: @" + str(player.tg_name) + "\n"
+        text2 = "ACTIVISION ID: " + str(player.activision_id) + "\n"
+        text3 = "К/Д в Варзоне: " + str(player.kd_warzone) + "\n"
+        text4 = "К/Д в мультиплеере: " + str(player.kd_multiplayer) + "\n\n"
+        text += text2 + text3 + text4
     await message.answer(text, reply=is_reply)
 
 

@@ -44,21 +44,33 @@ Session = sessionmaker(bind=engine)
 session = Session()
 
 
-def is_row_exists(tg_id):
+def is_row_exists(tg_id=None, tg_name=None):
     """Проверяем, существует ли указанная запись в БД с данным ID"""
 
     with engine.connect() as conn:
-        if session.query(COD_User).filter_by(tg_id=tg_id).first():
-            return True
+        if tg_name is None:
+            if session.query(COD_User).filter_by(tg_id=tg_id).first():
+                return True
+        if tg_id is None:
+            if session.query(COD_User).filter_by(tg_name=tg_name).first():
+                return True
+        if (tg_id is not None) and (tg_name is not None):
+            if session.query(COD_User).filter_by(tg_id=tg_id, tg_name=tg_name).first():
+                return True
     return False
 
 
-def get_member(tg_id):
+def get_member(tg_id=None, tg_name=None):
     """По указанному ID получаем объект"""
 
     with engine.connect() as conn:
-        if is_row_exists(tg_id):
-            member = session.query(COD_User).filter_by(tg_id=tg_id).first()
+        if is_row_exists(tg_id, tg_name):
+            if tg_name is None:
+                member = session.query(COD_User).filter_by(tg_id=tg_id).first()
+            if tg_id is None:
+                member = session.query(COD_User).filter_by(tg_name=tg_name).first()
+            if (tg_id is not None) and (tg_name is not None):
+                member = session.query(COD_User).filter_by(tg_id=tg_id, tg_name=tg_name).first()
             return member
     return False
 

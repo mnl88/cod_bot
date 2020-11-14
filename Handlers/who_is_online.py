@@ -16,7 +16,7 @@ import random
 import time
 
 # Запускаем бот из группы
-@dp.message_handler(user_id=ADMIN_ID, chat_type='private', commands=['online'])
+@dp.message_handler(user_id=ADMIN_ID, chat_type='private', commands=['psn_friend_list'])
 async def online_123(message: types.Message):
     ps_pars = PSN_Bot(PSN_USERNAME, PSN_EMAIL, PSN_PASSWORD)  # создаем экземпляр браузера
     if not ps_pars.is_logged_in_func():

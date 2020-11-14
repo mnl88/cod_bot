@@ -65,14 +65,13 @@ def parser_act_id(activision_id, game_type='WZ'):
 
 
 def main():
-    activision_id = 'BrozyBro#3779498'
+    activision_id = 'Suposter2560#6780771'
 
     kd_wz = parser_act_id(activision_id, 'WZ')
     print(kd_wz)
 
     kd_mp = parser_act_id(activision_id, 'MP')
     print(kd_mp)
-
 
 if __name__ == '__main__':
     main()
