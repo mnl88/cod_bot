@@ -106,7 +106,7 @@ async def show_stats_all(message: types.Message, is_reply=True):
             print(player, a)
             players_with_kd.append(player)
 
-    for player in sorted(players_with_kd, key=lambda user: user.kd_warzone):
+    for player in sorted(players_with_kd, key=lambda user: user.kd_warzone, reverse=True):
         if player.tg_name != 'unknown':
             text += "Имя в Телеге: @" + str(player.tg_name) + "\n"
         text2 = "ACTIVISION ID: " + str(player.activision_id) + "\n"

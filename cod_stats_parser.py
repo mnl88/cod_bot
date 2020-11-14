@@ -37,6 +37,7 @@ def get_content(html, game_type='WZ'):
         kd_ratio_column = 0
 
     soup = BeautifulSoup(html.text, 'html.parser')  # превращаем HTML в суп
+    kd_ratio = 'unknown'
     try:
         mini_soup = soup.find('div', class_='giant-stats')  # уменьшаем суп до таблицы
         items = mini_soup.find_all('div', class_='stat align-left giant expandable')  # разбиваем построчно
@@ -45,9 +46,9 @@ def get_content(html, game_type='WZ'):
                 title = item.find('span', title='K/D Ratio').get_text()
                 if title == 'K/D Ratio':
                     kd_ratio = item.find('span', class_='value').get_text()
-                    return kd_ratio
     except:
         pass
+    return kd_ratio
 
 
 def parser_act_id(activision_id, game_type='WZ'):
@@ -59,9 +60,10 @@ def parser_act_id(activision_id, game_type='WZ'):
         html = get_html(HOST, URL_MP_START, URL_MP_FINISH, activision_id)
     if html.status_code == 200:
         kd_ratio = get_content(html, game_type)
-        return kd_ratio
     else:
         print(f'Что-то не так {html}, {html.status_code}')
+        kd_ratio = 'unknown'
+    return kd_ratio
 
 
 def main():
