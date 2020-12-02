@@ -6,14 +6,14 @@ from aiogram.types import ParseMode
 from aiogram.types.message_entity import MessageEntity
 from aiogram.utils.markdown import text, bold, italic, code, pre, hlink
 
-
 from misc import dp
 from config import ADMIN_ID, COD_CHAT_ID, PSN_EMAIL, PSN_PASSWORD, PSN_USERNAME
-from alchemy import get_all_members, COD_User
+from alchemy import Person, TG_Account, DB
 from psn_selenium_parser import PSN_Bot
 import asyncio
 import random
 import time
+
 
 # Запускаем бот из группы
 @dp.message_handler(user_id=ADMIN_ID, chat_type='private', commands=['psn_friend_list'])

@@ -3,27 +3,29 @@ from aiogram.dispatcher.filters import CommandStart
 from re import compile
 from misc import dp
 from config import ADMIN_ID, COD_CHAT_ID, PSN_EMAIL, PSN_PASSWORD, PSN_USERNAME
-from alchemy import get_all_members, COD_User
+from alchemy import Person, TG_Account, DB
 from psn_selenium_parser import PSN_Bot
 import asyncio
 import random
 import logging
 
-
 logger = logging.getLogger(__name__)
 
+
 # Запускаем бот из группы
-@dp.message_handler(user_id=ADMIN_ID, chat_type='private', commands=['add_all_psn_to_friends', 'aaa'])
+@dp.message_handler(user_id=ADMIN_ID, commands='add_all_psn_to_friends')
 async def add_all_psn_to_friends(message: types.Message):
     logger.info(
         f'Хэндлер ADD_ALL_PSN_TO_FRIEND запущен пользователем с id {message.from_user.id} '
         f'({message.from_user.full_name}, {message.from_user.username})')
-    members = get_all_members()  # получаем список всех пользователей из БД
+    await types.ChatActions.typing()
+    db = DB()
+    members = db.get_all_persons()  # получаем список всех пользователей из БД
     members_with_psn = []
     logger.info(f'Всего профилей в БД: {len(members)}')
     for user in members:
-        if user.psn_id != 'unknown':
-            logger.debug(f'{user} - PSN указан ({user.psn_id})')
+        if user.psn_account is not None:
+            logger.debug(f'{user} - PSN указан ({user.psn_account})')
             members_with_psn.append(user)
 
     logger.info(f'Всего профилей в БД c PSN: {len(members_with_psn)}')  # выводим список пользователей из БД с psn_id
@@ -40,28 +42,26 @@ async def add_all_psn_to_friends(message: types.Message):
         i +=1
     members_with_psn_not_friend = members_with_psn
     for user in members_with_psn:
-        user: COD_User
         for psn_friend in psn_friends:
-            if user.psn_id == psn_friend['psn']:
-                logger.info(f'найден друг с PSN: {user.psn_id}')
+            if user.psn_account == psn_friend['psn']:
+                logger.info(f'найден друг с PSN: {user.psn_account}')
                 members_with_psn_not_friend.remove(user)
     logger.info(
         f'Пользователей в БД, указавших PSN, но не подружившихся с ботом: {len(members_with_psn_not_friend)}')  # выводим кол-во друзей
     for member_with_psn_not_friend in members_with_psn_not_friend:
-        logger.info(f'{member_with_psn_not_friend.psn_id}')
-
+        logger.info(f'{member_with_psn_not_friend.psn_account}')
 
     for user in members_with_psn_not_friend:
         try:
-            if ps_pars.psn_status(user.psn_id) == 'Добавить Друга':
+            if ps_pars.psn_status(user.psn_account) == 'Добавить Друга':
                 sleeptime = random.randrange(3, 10)
                 await asyncio.sleep(sleeptime)
-                ps_pars.add_to_friend(user.psn_id)
-                await message.answer(str(user.psn_id + ' - направлен в друзья направлен'))
-            elif ps_pars.psn_status(user.psn_id) == 'Вы подписаны':
+                ps_pars.add_to_friend(user.psn_account)
+                await message.answer(str(user.psn_account + ' - направлен в друзья направлен'))
+            elif ps_pars.psn_status(user.psn_account) == 'Вы подписаны':
                 await message.answer('Скорее всего с пользователем ' + user.psn_id + ' вы уже друзья')
-            elif ps_pars.psn_status(user.psn_id) == 'Подписаться':
-                await message.answer('запрос на добавление ' + user.psn_id + ' уже был ранее отправлен')
+            elif ps_pars.psn_status(user.psn_account) == 'Подписаться':
+                await message.answer('запрос на добавление ' + user.psn_account + ' уже был ранее отправлен')
             else:
                 logging.exception("Что-то не так")
         except:

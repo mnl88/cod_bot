@@ -4,6 +4,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support import expected_conditions as exp_cond
 from selenium.webdriver.support.ui import WebDriverWait
+from typing import List
 
 from config import PSN_USERNAME, PSN_PASSWORD, PSN_EMAIL
 import time
@@ -11,6 +12,9 @@ import random
 from selenium.common.exceptions import NoSuchElementException
 from bs4 import BeautifulSoup
 import re
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class PSN_Bot:
@@ -41,47 +45,57 @@ class PSN_Bot:
         password_input_xpath = '/html/body/div[3]/div/div/div[3]/div/div/div/div/div[4]/div/div[1]/main/div/div/div[5]/div/form/div[1]/div[2]/div/div/div/input'
         username_xpath = '/html/body/div[6]/div/main/div[1]/div/div[2]/a/span[2]/span[2]/span'
 
-        print('Поиск элемента USERNAME_FIELD')
+        logger.info('Поиск элемента USERNAME_FIELD')
         if self.xpath_exists(username_input_xpath, 500):
             username_input = browser.find_element_by_xpath(username_input_xpath)
             username_input.clear()
             username_input.send_keys(self.email)
             username_input.send_keys(Keys.ENTER)
             time.sleep(random.randrange(0, 1))
-            print('Поиск элемента PASSWORD_FIELD')
+            logger.info('Поиск элемента PASSWORD_FIELD')
             if self.xpath_exists(password_input_xpath, 10):
                 password_input = browser.find_element_by_xpath(password_input_xpath)
                 password_input.clear()
                 password_input.send_keys(self.password)
                 password_input.send_keys(Keys.ENTER)
                 time.sleep(random.randrange(0, 1))
-                print('Поиск элемента USERNAME')
+                logger.info('Поиск элемента USERNAME')
                 if self.xpath_is_equal(self.username, username_xpath, 500):
-                    print('Мы залогинились на сайте SONY')
+                    logger.info('Мы залогинились на сайте SONY')
         else:
-            print('Залогиниться на сайте SONY не получилось')
+            logger.critical('Залогиниться на сайте SONY не получилось')
 
     # возвращает состояние (залогинены или нет)
     def is_logged_in_func(self):
-
+        logger.info('Начинаем проверку, залогинены мы на сайте www.playstation.com или нет')
         is_logged_in = False
         browser = self.browser
         browser.execute_script("window.open('https://my.playstation.com/profile/me/friends')")  # создаём новую вкладку
         tabs = browser.window_handles  # получаем список вкладок
         browser.switch_to.window(tabs[1])  # переключаемся на вторую вкладку
         time.sleep(1)  # на всякий случай ждём 1 секунду
-
         my_ps_link_xpath = '/html/body/div[3]/div/header/div/div/div/a'
+        logger.info('Начинаем проверку, отрисовалась ли на странице значок playstation')
+
         if self.xpath_is_equal('My PlayStation', my_ps_link_xpath):  # проверяем, отрисовалась ли ссылка на странице
-            print('Проверка, отрисовалась ли ссылка My PlayStation на странице')
+            logger.info('Cсылка My PlayStation корректно отрисована на web-странице')
             time.sleep(1)  # на всякий случай ждём 1 секунду
             psn_xpath = '/html/body/div[6]/div/main/div[1]/div/div[2]/a/span[2]/span[2]/span'
+            login_button_xpath = '/html/body/div[6]/div/main/div/div[1]/div/div[3]/button[1]'
+
             try:
-                if browser.find_element_by_xpath(psn_xpath).text == self.username:  # проверяем видимость username
-                    print('Мы залогинились на сайте')
+                print('gsdgjklsd ')
+                if self.xpath_is_equal('Войти в сеть', login_button_xpath):
+                    logger.info('Мы не залогинены')
+                    is_logged_in = False
+                elif self.xpath_is_equal('Sign In', login_button_xpath):
+                    logger.info('Мы не залогинены')
+                    is_logged_in = False
+                elif self.xpath_is_equal(self.username, psn_xpath):
+                    logger.info('Мы залогинены по Username = ', self.username)
                     is_logged_in = True
             except Exception as ex:
-                print(f'Username на странице не найден, код ошики {ex}')
+                logger.info('Exception: ', ex)
         self.browser.close()  # закрывам текущую вкладку
         browser.switch_to.window(tabs[0])  # переключаемся на первую вкладку
         return is_logged_in
@@ -112,7 +126,7 @@ class PSN_Bot:
         return status
 
     # получаем список друзей в виде словаря {psn, name, now_playing, status, ps_plus}
-    def friends_list(self, psn):
+    def friends_list(self, psn) -> List[dict]:
 
         url = 'https://my.playstation.com/profile/me/friends'
         if psn != self.username:
@@ -124,7 +138,7 @@ class PSN_Bot:
         psn_xpath = '/html/body/div[6]/div/main/div[1]/div/div[2]/a/span[2]/span[2]/span'
         players = []
         if self.xpath_is_equal(self.username, psn_xpath):  # проверяем видимость username
-            print('Мы залогинились на сайте')
+            print('Проверка логирования на сайт под psn = ', self.username, ' пройдена успешно!')
 
             time.sleep(random.randrange(1, 2))
             html_page = str(browser.page_source)
@@ -221,7 +235,7 @@ class PSN_Bot:
                     break
                 time.sleep(random.randrange(0, 1))
                 browser.find_element_by_xpath(xpath)
-                print(f'Элемент найден за {time.time()-start} секунд')
+                logger.info(f'Элемент найден за {time.time()-start} секунд')
                 exist = True
                 break
             except NoSuchElementException:
@@ -238,11 +252,12 @@ class PSN_Bot:
             while True:
                 try:
                     if time.time() >= start + waiting_time:
-                        print(f'Прошло более {waiting_time}сек, значение {value} так и не было найдено(')
+                        logger.info(f'Прошло более {waiting_time}сек, значение {value} так и не было найдено(')
 
                         break
                     time.sleep(random.randrange(0, 1))
                     if browser.find_element_by_xpath(xpath).text == value:
+                        logger.info(f'Значение {value} было найдено за {time.time()-start} сек')
                         is_equal = True
                         break
                 except Exception:
@@ -251,22 +266,28 @@ class PSN_Bot:
 
 
 if __name__ == "__main__":
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(message)s',
+        datefmt='%d.%m.%y %H:%M:%S')
     my_bot = PSN_Bot(PSN_USERNAME, PSN_EMAIL, PSN_PASSWORD)  # создаем экземпляр браузера
-    print(my_bot.is_logged_in_func())  # проверяем, залогинены ли мы - False
+    # print(my_bot.is_logged_in_func())  # проверяем, залогинены ли мы - False
     my_bot.login()  # логинимся
-    print(my_bot.is_logged_in_func())  # проверяем, залогинены ли мы - True
-    psn = 'Manile_88'  # активная PSN
+    # print(my_bot.is_logged_in_func())  # проверяем, залогинены ли мы - True
+    psn = 'manile_88'  # активная PSN
     print(my_bot.friends_count_func(my_bot.username))  # выводим кол-во друзей
     players = my_bot.friends_list(my_bot.username)  # получаем список друзей и выводим их
     for player in players:
         print(player)
-    psn1 = 'Paha_Babaha'
-    psn2 = 'Manile_88'
-    psn3 = 'New_Renegades'
+    # psn1 = 'Paha_Babaha'
+    # psn2 = 'Manile_88'
+    # psn3 = 'New_Renegades'
 
-    my_bot.psn_status(psn1)
-    my_bot.psn_status(psn2)
-    my_bot.psn_status(psn3)
+    my_bot.add_to_friend(psn)
+    # my_bot.psn_status(psn1)
+    # my_bot.psn_status(psn2)
+    # my_bot.psn_status(psn3)
 
     #
+    # #
 

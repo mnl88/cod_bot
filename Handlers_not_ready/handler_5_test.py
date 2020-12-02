@@ -1,7 +1,6 @@
 from config import ADMIN_ID
 from misc import dp
-from alchemy import session, COD_User, datetime
-from alchemy import get_member, get_all_members
+from alchemy import Person, TG_Account, DB
 from aiogram import types
 import asyncio
 
@@ -10,10 +9,10 @@ import asyncio
 async def add_me_for_test(message: types.Message):
     """проверяет, есть ли пользователь НИКИТА, если нет, то добавляет его в БД"""
     tg_id = 202181776
-    manile = get_member(tg_id)
+    manile = get_member_old(tg_id)
     if manile is False:
         print('нету Manile')
-        manile = COD_User(tg_id=tg_id)
+        manile = COD_User_old(tg_id=tg_id)
         manile.tg_name = 'MaNiLe88'
         manile.name = 'Никита'
         manile.activision_id = 'Imago#1393409'

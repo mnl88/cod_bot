@@ -1,7 +1,15 @@
 # Импортируем все группы хендлеров
-from . import add_to_friend, who_is_online
+from . import cancel_handler
+from . import add_to_friend
+from . import handler_2_cod_edit
+from . import handler_1_general
+from . import handler_3_cod_stats
+from . import handler_4_admin
+from . import who_is_online
 from . import start
-from . import handler_1_general, handler_2_cod_edit, handler_3_cod_stats, handler_4_admin, handler_5_test
+from . import edit_person
+
+
 
 
 
