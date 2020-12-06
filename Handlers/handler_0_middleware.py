@@ -184,7 +184,18 @@ def mentioned_user_list(message: types.Message):
     """Возвращает списком всех упомянутых пользователей"""
     tg_account_list = []
     db = DB()
+    members = []
 
+    # часть кода, чтобы узнать есть ли в сообщении текст, кроме текста команд
+    message_text = message.text
+    pattern = re.compile('/+\w{0,100}')  # паттерн, для нахождения команд в тексте
+    all_commands = re.findall(pattern, message_text)  # список всех команд в тексте
+    for item in all_commands:
+        message_text = message_text.replace(item, '', 1)
+    print('ТЕКСТ БЕЗ КОМАНД: ', message_text)
+    if message_text == '':
+        print('а текст то пустой =)')
+        return []
     # часть кода, для mention
     pattern = re.compile('@+\w{0,100}')  # паттерн, для нахождения упоминаний в тексте
     username_list = re.findall(pattern, message.text)  # Список упоминаний по username в данном сообщении
@@ -211,7 +222,7 @@ def mentioned_user_list(message: types.Message):
                 if tg_account is not None:
                     tg_account_list.append(tg_account)
 
-    members = []
+
     if len(tg_account_list) > 0:
         for tg_account in tg_account_list:
             member = db.get_person_by_tg_account(tg_account)

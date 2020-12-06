@@ -1,5 +1,5 @@
 # Импортируем все группы хендлеров
-from . import *
+from . import train_something
 
 
 

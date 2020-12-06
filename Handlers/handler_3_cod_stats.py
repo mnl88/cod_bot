@@ -12,38 +12,37 @@ from aiogram.types import ParseMode
 from aiogram.utils.markdown import text, bold, italic, code, pre, hlink
 import re
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import List
+import math
 
 logger = logging.getLogger(__name__)
 
 
+# Обновляем статистику по КД
 async def stat_update(db: DB, person: Person):
     try:
-        # person.kd_warzone = parser_act_id(person.activision_account, 'WZ')
-        # person.kd_multiplayer = parser_act_id(person.activision_account, 'MP')
-
-        # person.kd_warzone = get_kd(parse_stat(activision_account=person.activision_account), 'WZ')
-        # person.kd_multiplayer = get_kd(parse_stat(activision_account=person.activision_account), 'MP')
-        # person.kd_cold_war_multiplayer = get_kd(parse_stat(activision_account=person.activision_account), 'CW')
-
         parsed_stats = parse_stat(activision_account=person.activision_account)
         kd_ratio = get_kd(parsed_stats)
-        logger.info(f'Парсинг КД прошёл успешно. {kd_ratio=}')
-        person.kd_warzone = kd_ratio['warzone']
-        person.kd_multiplayer = kd_ratio['modern-warfare']
-        person.kd_cold_war_multiplayer = kd_ratio['cold-war']
-
-        #
-        person.modified_kd_at = datetime.now()
-        db.session.add(person)
-        db.session.commit()
-        logger.info(f'Статистика обновлена. {person}, {person.kd_warzone=}, {person.kd_multiplayer=}')
-        return True
+        if kd_ratio['warzone'] is None and kd_ratio['modern-warfare'] is None and kd_ratio['cold-war'] is None:
+            logger.info('Т.к. значения всех КД не определены, то перезаписи КД не будет')
+            result = False
+        else:
+            logger.info(f'Парсинг КД прошёл успешно. {kd_ratio=}')
+            person.kd_warzone = kd_ratio['warzone']
+            person.kd_multiplayer = kd_ratio['modern-warfare']
+            person.kd_cold_war_multiplayer = kd_ratio['cold-war']
+            person.modified_kd_at = datetime.now()
+            db.session.add(person)
+            db.session.commit()
+            logger.info(f'Статистика КД обновлена. {person}')
+            logger.info(f'{person.kd_warzone=}, {person.kd_multiplayer=}, {person.kd_cold_war_multiplayer=}')
+            result = True
     except Exception as ex:
         db.session.rollback()
         logger.info(f'Ошибка. {ex}')
-        return False
+        result = False
+    return result
 
 
 # Показывает полные данные о пользователе
@@ -80,6 +79,7 @@ async def show_stat(message: types.Message):
     await types.ChatActions.typing()
     db = DB()
     update_tg_account(message.from_user)
+
     members = mentioned_user_list(message)
 
     # если упоминаний нет, то добавляем в список себя
@@ -89,10 +89,29 @@ async def show_stat(message: types.Message):
         logger.info(f'{tg_account=}')
         try:
             me = db.get_person_by_tg_account(tg_account)
-            if me is not None:
-                await stat_update(db=db, person=me)
+            if me is not None:  # проверяем, смогли ли мы загрузить свою учётку в БД
+                if me.modified_kd_at is None:
+                    logger.info(f'КД ранее ни разу удачно не обновлялось')
+                    need_to_update_kd = True
+                else:
+                    logger.info(f'Последнее удачное обновление КД произошло {me.modified_kd_at}')
+                    # сколько прошло секунд с последнего обновления
+                    timestamp_delta = datetime.now().timestamp() - me.modified_kd_at.timestamp()
+                    # переводим секунды в часы, с округлением вниз
+                    hours_delta_int = math.floor(timestamp_delta/(60*60))
+                    logger.info(f'Последнее удачное обновление КД было {hours_delta_int} часов назад')
+                    hours = 10  # как часто обновлять КД
+                    if hours_delta_int > hours:
+                        need_to_update_kd = True
+                    else:
+                        need_to_update_kd = False
+                        logger.info(f'КД обновляется на чаще раза в {hours} часов. Еще не пришло время обновлять КД')
+                if need_to_update_kd:
+                    logger.info(f'Обновляем КД')
+                    await stat_update(db=db, person=me)
                 members.append(me)
-        except:
+        except Exception as ex:
+            print(ex)
             await message.answer(
                 'Ошибка: пользователь не найден в базе данных.\nДля работы БОТА необходимо открыть ПРИВАТНЫЙ чат с ним и зарегистрироваться.', reply=True)
 
@@ -226,8 +245,31 @@ async def stats_update_all(message: types.Message):
     players = db.get_all_persons()
     for player in players:
         await types.ChatActions.typing()
-        await stat_update(db=db, person=player)
-    await message.answer(message.from_user.first_name + ", статистика обновлена")
+        if player is not None:  # проверяем, смогли ли мы загрузить свою учётку в БД
+            if player.modified_kd_at is None:
+                logger.info(f'КД ранее ни разу удачно не обновлялось')
+                need_to_update_kd = True
+            else:
+                logger.info(f'Последнее удачное обновление КД произошло {player.modified_kd_at}')
+                # сколько прошло секунд с последнего обновления
+                timestamp_delta = datetime.now().timestamp() - player.modified_kd_at.timestamp()
+                # переводим секунды в часы, с округлением вниз
+                hours_delta_int = math.floor(timestamp_delta / (60 * 60))
+                logger.info(f'Последнее удачное обновление КД было {hours_delta_int} часов назад')
+                hours = 10  # как часто обновлять КД
+                if hours_delta_int > hours:
+                    need_to_update_kd = True
+                else:
+                    need_to_update_kd = False
+                    logger.info(f'КД обновляется на чаще раза в {hours} часов. Еще не пришло время обновлять КД')
+            if need_to_update_kd:
+                logger.info(f'Обновляем КД')
+                await stat_update(db=db, person=player)
+                await message.answer(f'статистика игрока с аккаунтом ACTIVISION {player.activision_account} обновлена')
+            else:
+                await message.answer(
+                    f'Обновление статистики для игрока с аккаунтом ACTIVISION {player.activision_account} не требуется')
+    await message.answer(message.from_user.first_name + ", обновление статистики по всем пользователям закончена!")
 
 
 @dp.message_handler(chat_type=['group', 'supergroup'], commands=['stats_update_all', 'stats_all'])
@@ -236,3 +278,5 @@ async def show_stats_all(message: types.Message, is_reply=True):
     await types.ChatActions.typing()
     await message.answer(
         'Данную команду может выполнить только пользователь с правами админимтратора', reply=is_reply)
+
+
